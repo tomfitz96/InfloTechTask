@@ -6,10 +6,11 @@ We recommend that you use [Visual Studio (Community Edition)](https://visualstud
 **The application uses an in-memory database, so changes will not be persisted between executions.**
 
 ## The Exercise
-Complete as many of the tasks below as you can. These are split into 3 levels of difficulty 
+Complete as many of the tasks below as you feel comfortable with. These are split into 4 levels of difficulty 
 * **Standard** - Functionality that is common when working as a web developer
 * **Advanced** - Slightly more technical tasks and problem solving
 * **Expert** - Tasks with a higher level of problem solving and architecture needed
+* **Platform** - Tasks with a focus on infrastructure and scaleability, rather than application development.
 
 ### 1. Filters Section (Standard)
 
@@ -49,6 +50,14 @@ Some ideas are:
 * Implement authentication and login based on the users being stored.
 * Implement bundling of static assets.
 * Update the data access layer to use a real database, and implement database schema migrations.
+
+### 6. Future-Proof the Application (Platform)
+
+Add additional layers to the application that will ensure that it is scaleable with many users or developers. For example:
+* Add CI pipelines to run tests and build the application.
+* Add CD pipelines to deploy the application to cloud infrastructure.
+* Add IaC to support easy deployment to new environments.
+* Introduce a message bus and/or worker to handle long-running operations.
 
 ## Additional Notes
 
