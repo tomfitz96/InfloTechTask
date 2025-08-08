@@ -5,7 +5,7 @@ using UserManagement.Web.Models.Users;
 
 namespace UserManagement.WebMS.Controllers;
 
-[Route("users")]
+//[Route("users")]
 public class UsersController : Controller
 {
     private readonly IUserService _userService;
@@ -42,4 +42,33 @@ public class UsersController : Controller
 
         return View(model);
     }
+
+    [HttpGet]
+    public IActionResult Create()
+    {
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Create(UserListItemViewModel model)
+    {
+        if (!ModelState.IsValid)
+            return View(model);
+
+        // In the Create(UserListItemViewModel model) method, update the mapping to handle possible nulls
+        var user = new User
+        {
+            Forename = model.Forename ?? string.Empty,
+            Surname = model.Surname ?? string.Empty,
+            Email = model.Email ?? string.Empty,
+            IsActive = model.IsActive,
+            DateOfBirth = model.DateOfBirth
+        };
+
+        _userService.Create(user); 
+
+        return RedirectToAction(nameof(List));
+    }
+
 }
