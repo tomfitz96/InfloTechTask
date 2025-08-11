@@ -1,4 +1,9 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+
+using Microsoft.EntityFrameworkCore;
+
 using UserManagement.Models;
 using UserManagement.Services.Domain.Interfaces;
 using UserManagement.Web.Models.Users;
@@ -24,7 +29,7 @@ public class UsersController : Controller
             users = _userService.GetAll();
         }
 
-        //var items = _userService.GetAll().Select(p => new UserListItemViewModel
+        
         var items = users.Select(p => new UserListItemViewModel
         {
             Id = p.Id,
@@ -44,19 +49,39 @@ public class UsersController : Controller
     }
 
     [HttpGet]
+    // GET: Users/ViewUser
+    public IActionResult ViewUser(int id)
+    {
+        var user = _userService.User(id);
+        if (user == null)
+            return NotFound();
+
+        var model = new UserListItemViewModel
+        {
+            Id = user.Id,
+            Forename = user.Forename,
+            Surname = user.Surname,
+            Email = user.Email,
+            IsActive = user.IsActive,
+            DateOfBirth = user.DateOfBirth
+        };
+
+        return View(model);
+
+    }
+
+    [HttpGet]
     public IActionResult Create()
     {
         return View();
     }
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
+    [HttpPost]    
     public IActionResult Create(UserListItemViewModel model)
     {
         if (!ModelState.IsValid)
             return View(model);
-
-        // In the Create(UserListItemViewModel model) method, update the mapping to handle possible nulls
+        
         var user = new User
         {
             Forename = model.Forename ?? string.Empty,
@@ -66,9 +91,92 @@ public class UsersController : Controller
             DateOfBirth = model.DateOfBirth
         };
 
-        _userService.Create(user); 
+        _userService.Create(user);
+
+        if (ModelState.IsValid)
+            return RedirectToAction(nameof(List));
+        else 
+            return View(model);
+    }
+    
+    // GET: Users/Edit
+    [HttpGet]
+    public IActionResult EditUser(int id)
+    {
+        var user = _userService.User(id);
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        var model = new UserListItemViewModel
+        {
+            Id = user.Id,
+            Forename = user.Forename,
+            Surname = user.Surname,
+            Email = user.Email,
+            IsActive = user.IsActive,
+            DateOfBirth = user.DateOfBirth
+        };
+        return View(model);
+    }
+
+    // POST: User/ViewUser    
+    [HttpPost]    
+    public IActionResult EditUser(UserListItemViewModel model)
+    {
+        if (!ModelState.IsValid)
+            return View(model);
+
+        var user = _userService.User(model.Id);
+
+        if (user == null)
+            return NotFound();
+
+        user.Forename = model.Forename ?? string.Empty;
+        user.Surname = model.Surname ?? string.Empty;
+        user.Email = model.Email ?? string.Empty;
+        user.IsActive = model.IsActive;
+        user.DateOfBirth = model.DateOfBirth;
+
+        _userService.Update(user);
+
+        if (ModelState.IsValid)
+            return RedirectToAction(nameof(List));
+        else 
+            return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult DeleteUser(int id)
+    {
+        var user = _userService.User(id); 
+        if (user == null)
+            return NotFound();
+     
+        var model = new UserListItemViewModel
+        {
+            Id = user.Id,
+            Forename = user.Forename,
+            Surname = user.Surname,
+            Email = user.Email,
+            IsActive = user.IsActive,
+            DateOfBirth = user.DateOfBirth
+        };
+
+        return View(model);
+    }
+
+    [HttpPost, ActionName("Delete")]
+    [ValidateAntiForgeryToken]
+    public IActionResult DeleteConfirmed(int id)
+    {
+        var user = _userService.User(id);
+        if (user == null)
+            return NotFound();
+
+        _userService.Delete(user); 
 
         return RedirectToAction(nameof(List));
     }
-
 }

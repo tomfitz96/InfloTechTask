@@ -6,7 +6,7 @@
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>Id</th>
+                @* <th>Id</th> *@
                 <th>Forename</th>
                 <th>Surname</th>
                 <th>Email</th>
@@ -19,9 +19,9 @@
             @foreach (var item in Model.Items)
             {
                 <tr>
-                    <td>
+                    @* <td>
                         @item.Id
-                    </td>
+                    </td> *@
                     <td>
                         @item.Forename
                     </td>
@@ -43,9 +43,9 @@
                                 Actions
                             </button>
                             <ul class="dropdown-menu" aria-labelledby="btnToggleActions">
-                                <li><a class="dropdown-item" href="#">View</a></li>
-                                <li><a class="dropdown-item" href="#">Edit</a></li>
-                                <li><a class="dropdown-item" href="#">Delete</a></li>
+                                <li><a class="dropdown-item" asp-controller="Users" asp-action="ViewUser" asp-route-id="@item.Id">View</a></li>
+                                <li><a class="dropdown-item" asp-controller="Users" asp-action="EditUser" asp-route-id="@item.Id">Edit</a></li>
+                                <li><a class="dropdown-item" asp-controller="Users" asp-action="DeleteUser" asp-route-id="@item.Id">Delete</a></li>
                             </ul>
                         </div>
                     </td>

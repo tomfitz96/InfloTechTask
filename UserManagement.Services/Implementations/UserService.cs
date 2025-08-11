@@ -1,4 +1,4 @@
-﻿//using System;
+﻿
 using System.Collections.Generic;
 using System.Linq;
 using UserManagement.Data;
@@ -27,5 +27,22 @@ public class UserService : IUserService
     public void Create(User user)
     {        
         _dataAccess.Create(user);
+    }
+
+    public User? User(int id)
+    {
+
+        return _dataAccess.GetAll<User>().Where(u => u.Id == id).FirstOrDefault();
+    }
+
+    public void Update(User existinguser)
+    {
+        _dataAccess.Update(existinguser);
+    }
+
+    public void Delete(User user)
+    {
+        _dataAccess.Delete(user);
+     
     }
 }
