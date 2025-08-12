@@ -9,6 +9,31 @@ namespace UserManagement.Data.Tests;
 
 public class UserControllerTests
 {
+    private User[] SetupUsers(string forename = "Johnny", string surname = "User", string email = "juser@example.com", bool isActive = true)
+    {
+        var users = new[]
+        {
+            new User
+            {
+                Forename = forename,
+                Surname = surname,
+                Email = email,
+                IsActive = isActive
+            }
+        };
+
+        _userService
+            .Setup(s => s.GetAll())
+            .Returns(users);
+
+        return users;
+    }
+
+    private readonly Mock<IUserService> _userService = new();
+    private readonly Mock<IDataContext> _dataContext = new();
+
+    private UsersController CreateController() => new(_userService.Object, _dataContext.Object);
+
     [Fact]
     public void List_WhenServiceReturnsUsers_ModelMustContainUsers()
     {
@@ -121,29 +146,4 @@ public class UserControllerTests
         // Assert
         result.Should().BeOfType<NotFoundResult>();
     }
-
-    private User[] SetupUsers(string forename = "Johnny", string surname = "User", string email = "juser@example.com", bool isActive = true)
-    {
-        var users = new[]
-        {
-            new User
-            {
-                Forename = forename,
-                Surname = surname,
-                Email = email,
-                IsActive = isActive
-            }
-        };
-
-        _userService
-            .Setup(s => s.GetAll())
-            .Returns(users);
-
-        return users;
-    }
-
-    private readonly Mock<IUserService> _userService = new();
-    private readonly Mock<IDataContext> _dataContext = new();
-
-    private UsersController CreateController() => new(_userService.Object, _dataContext.Object);
 }
