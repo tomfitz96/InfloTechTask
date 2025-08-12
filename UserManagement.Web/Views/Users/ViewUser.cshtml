@@ -34,8 +34,30 @@
             @Html.DisplayFor(model => model.DateOfBirth)
         </dd>
     </dl>
+
+    <h3>User Action Log</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Action</th>
+                <th>Details</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var log in Model.Logs)
+            {
+                <tr>
+                    <td>@log.Action</td>
+                    <td>@log.Details</td>
+                    <td>@log.Timestamp.ToLocalTime()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>
 <div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
+    @* <a asp-action="Edit" asp-route-id="@Model.Id">Edit User</a> *@
+    <a asp-controller="Users" asp-action="EditUser" asp-route-id="@Model.Id">Edit</a>
     <a asp-action="List">Back to List</a>
 </div>

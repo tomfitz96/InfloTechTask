@@ -1,0 +1,14 @@
+@model UserManagement.Models.LogEntry
+
+<h2>Log Entry Details</h2>
+<dl>
+    <dt>Action</dt>
+    <dd>@Model.Action</dd>
+    <dt>User ID</dt>
+    <dd>@Model.UserId</dd>
+    <dt>Details</dt>
+    <dd>@Model.Details</dd>
+    <dt>Timestamp</dt>
+    <dd>@Model.Timestamp.ToLocalTime()</dd>
+</dl>
+<a asp-action="Index" class="btn btn-secondary">Back to Logs</a>

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 
+using UserManagement.Models;
+
 namespace UserManagement.Web.Models.Users;
 
 public class UserListViewModel
@@ -28,4 +30,6 @@ public class UserListItemViewModel
 
     [Required(ErrorMessage = "Date of Birth is required.")]
     public DateOnly DateOfBirth { get; set; }
+
+    public List<LogEntry> Logs { get; set; } = new();
 }

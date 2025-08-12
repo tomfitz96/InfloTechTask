@@ -1,0 +1,38 @@
+@model List<UserManagement.Web.Models.Logs.LogEntryWithUserViewModel>
+
+<h2>Application Logs</h2>
+
+<form method="get" asp-controller="Logs" asp-action="Index" class="mb-3">
+    <div class="input-group">
+        <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="Search by Forename or Surname" />
+        <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+</form>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Action</th>
+            <th>UserId</th>
+            <th>Forename</th>
+            <th>Surname</th>
+            <th>Timestamp</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var log in Model)
+    {
+        <tr>
+            <td>@log.Action</td>
+            <td>@log.UserId</td>
+            <td>@log.Forename</td>
+            <td>@log.Surname</td>
+            <td>@log.Timestamp.ToLocalTime()</td>
+            <td>
+                <a asp-controller="Logs" asp-action="Details" asp-route-id="@log.LogId">View</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

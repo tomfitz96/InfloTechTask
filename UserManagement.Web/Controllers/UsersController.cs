@@ -1,9 +1,10 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 
 using Microsoft.EntityFrameworkCore;
-
+using UserManagement.Data;
 using UserManagement.Models;
 using UserManagement.Services.Domain.Interfaces;
 using UserManagement.Web.Models.Users;
@@ -14,7 +15,25 @@ namespace UserManagement.WebMS.Controllers;
 public class UsersController : Controller
 {
     private readonly IUserService _userService;
-    public UsersController(IUserService userService) => _userService = userService;
+    private readonly IDataContext _dataContext;
+    public UsersController(IUserService userService, IDataContext dataContext)
+    {
+        _userService = userService;
+        _dataContext = dataContext;
+    }
+
+
+    private void LogUserAction(int? userId, string action, string? details = null)
+    {
+        var log = new LogEntry
+        {
+            UserId = userId,
+            Action = action,
+            Details = details,
+            Timestamp = DateTime.UtcNow
+        };
+        _dataContext.Create(log);        
+    }
 
     [HttpGet]
     public ViewResult List(bool? isActive)
@@ -56,14 +75,21 @@ public class UsersController : Controller
         if (user == null)
             return NotFound();
 
+        var logs = _dataContext.LogEntries
+        .Where(l => l.UserId == id)
+        .OrderByDescending(l => l.Timestamp)
+        .ToList();
+
         var model = new UserListItemViewModel
         {
+
             Id = user.Id,
             Forename = user.Forename,
             Surname = user.Surname,
             Email = user.Email,
             IsActive = user.IsActive,
-            DateOfBirth = user.DateOfBirth
+            DateOfBirth = user.DateOfBirth,
+            Logs = logs
         };
 
         return View(model);
@@ -92,6 +118,7 @@ public class UsersController : Controller
         };
 
         _userService.Create(user);
+        LogUserAction(user.Id, "Created", $"User {user.Forename} {user.Surname} created.");
 
         if (ModelState.IsValid)
             return RedirectToAction(nameof(List));
@@ -133,16 +160,35 @@ public class UsersController : Controller
         if (user == null)
             return NotFound();
 
+        
+
+        var changes = new List<string>();
+
+        if (user.Forename != model.Forename)
+            changes.Add($"Forename changed from {user.Forename} to {model.Forename}");
+        if (user.Surname != model.Surname)
+            changes.Add($"Surname changed from {user.Surname} to {model.Surname}");
+        if (user.Email != model.Email)
+            changes.Add($"Email changed from {user.Email} to {model.Email}");
+        if (user.IsActive != model.IsActive)
+            changes.Add($"IsActive changed from {user.IsActive} to {model.IsActive}");
+        if (user.DateOfBirth != model.DateOfBirth)
+            changes.Add($"DateOfBirth changed from {user.DateOfBirth} to {model.DateOfBirth}");
+
         user.Forename = model.Forename ?? string.Empty;
         user.Surname = model.Surname ?? string.Empty;
         user.Email = model.Email ?? string.Empty;
         user.IsActive = model.IsActive;
         user.DateOfBirth = model.DateOfBirth;
 
-        _userService.Update(user);
-
+        if (changes.Count > 0)
+        {
+            _userService.Update(user);
+            LogUserAction(user.Id, "Updated", string.Join("; ",changes));
+        }
+       
         if (ModelState.IsValid)
-            return RedirectToAction(nameof(List));
+            return RedirectToAction(nameof(ViewUser), new { id = user.Id });       
         else 
             return View(model);
     }
@@ -175,8 +221,8 @@ public class UsersController : Controller
         if (user == null)
             return NotFound();
 
-        _userService.Delete(user); 
-
+        _userService.Delete(user);
+        LogUserAction(user.Id, "Deleted", $"User {user.Forename} {user.Surname} deleted.");
         return RedirectToAction(nameof(List));
     }
 }

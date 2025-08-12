@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+
 using UserManagement.Models;
 
 namespace UserManagement.Data;
@@ -28,7 +29,10 @@ public class DataContext : DbContext, IDataContext
             new User { Id = 11, Forename = "Robin", Surname = "Feld", Email = "rfeld@example.com", IsActive = true , DateOfBirth = new DateOnly(1957,2,5)},
         });
 
-    public DbSet<User>? Users { get; set; }
+    public DbSet<User> Users { get; set; }
+
+    public DbSet<LogEntry> LogEntriesDbSet { get; set; }
+    public IQueryable<LogEntry> LogEntries => LogEntriesDbSet!;
 
     public IQueryable<TEntity> GetAll<TEntity>() where TEntity : class
         => base.Set<TEntity>();
