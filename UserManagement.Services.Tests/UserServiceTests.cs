@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using UserManagement.Models;
 using UserManagement.Services.Domain.Implementations;
 
@@ -8,7 +9,7 @@ public class UserServiceTests
 {
     private readonly Mock<IDataContext> _dataContext = new();
     private UserService CreateService() => new(_dataContext.Object);
-    private IQueryable<User> SetupUsers(string forename = "Johnny", string surname = "User", string email = "juser@example.com", bool isActive = true)
+    private Task<IQueryable<User>> SetupUsers(string forename = "Johnny", string surname = "User", string email = "juser@example.com", bool isActive = true)
     {
         var users = new[]
         {
@@ -22,42 +23,42 @@ public class UserServiceTests
         }.AsQueryable();
 
         _dataContext
-            .Setup(s => s.GetAll<User>())
-            .Returns(users);
+            .Setup(s => s.GetAllAsync<User>())
+            .ReturnsAsync(users.ToList());
 
-        return users;
+        return Task.FromResult(users);
     }
 
     [Fact]
-    public void GetAll_WhenContextReturnsEntities_MustReturnSameEntities()
+    public async Task GetAll_WhenContextReturnsEntities_MustReturnSameEntities()
     {
         // Arrange: Initializes objects and sets the value of the data that is passed to the method under test.
         var service = CreateService();
-        var users = SetupUsers();
+        var users = await SetupUsers();
 
         // Act: Invokes the method under test with the arranged parameters.
-        var result = service.GetAll();
+        var result = await service.GetAllAsync();
 
         // Assert: Verifies that the action of the method under test behaves as expected.
-        result.Should().BeSameAs(users);
+        result.Should().BeEquivalentTo(users);
     }
 
     [Fact]
-    public void FilterByActive_WhenCalled_ReturnsOnlyMatchingUsers()
+    public async Task FilterByActive_WhenCalled_ReturnsOnlyMatchingUsers()
     {
         // Arrange
         var service = CreateService();
         var users = new[]
         {
-        new User { Forename = "Active", Surname = "User", Email = "active@example.com", IsActive = true },
-        new User { Forename = "Inactive", Surname = "User", Email = "inactive@example.com", IsActive = false }
-    }.AsQueryable();
+            new User { Forename = "Active", Surname = "User", Email = "active@example.com", IsActive = true },
+            new User { Forename = "Inactive", Surname = "User", Email = "inactive@example.com", IsActive = false }
+        }.AsQueryable();
 
-        _dataContext.Setup(s => s.GetAll<User>()).Returns(users);
+        _dataContext.Setup(s => s.GetAllAsync<User>()).ReturnsAsync(users.ToList());
 
         // Act
-        var activeUsers = service.FilterByActive(true).ToList();
-        var inactiveUsers = service.FilterByActive(false).ToList();
+        var activeUsers = (await service.FilterByActiveAsync(true)).ToList();
+        var inactiveUsers = (await service.FilterByActiveAsync(false)).ToList();
 
         // Assert
         activeUsers.Should().ContainSingle(u => u.IsActive);
@@ -65,21 +66,21 @@ public class UserServiceTests
     }
 
     [Fact]
-    public void Create_CallsDataContextCreate()
+    public async Task Create_CallsDataContextCreate()
     {
         // Arrange
         var service = CreateService();
         var user = new User { Forename = "Test", Surname = "User", Email = "test@example.com", IsActive = true };
 
         // Act
-        service.Create(user);
+        await service.CreateAsync(user);
 
         // Assert
-        _dataContext.Verify(c => c.Create(user), Times.Once);
+        _dataContext.Verify(c => c.CreateAsync(user), Times.Once);
     }
 
     [Fact]
-    public void User_WhenIdExists_ReturnsUser()
+    public async Task User_WhenIdExists_ReturnsUser()
     {
         // Arrange
         var service = CreateService();
@@ -87,10 +88,10 @@ public class UserServiceTests
         {
         new User { Id = 1, Forename = "A", Surname = "B", Email = "a@b.com", IsActive = true }}.AsQueryable();
 
-        _dataContext.Setup(s => s.GetAll<User>()).Returns(users);
+        _dataContext.Setup(s => s.GetAllAsync<User>()).ReturnsAsync(users.ToList());
 
         // Act
-        var result = service.User(1);
+        var result = await service.UserAsync(1);
 
         // Assert
         result.Should().NotBeNull();
@@ -98,45 +99,45 @@ public class UserServiceTests
     }
 
     [Fact]
-    public void User_WhenIdDoesNotExist_ReturnsNull()
+    public async Task User_WhenIdDoesNotExist_ReturnsNull()
     {
         // Arrange
         var service = CreateService();
         var users = new User[0].AsQueryable();
-        _dataContext.Setup(s => s.GetAll<User>()).Returns(users);
+        _dataContext.Setup(s => s.GetAllAsync<User>()).ReturnsAsync(users.ToList());
 
         // Act
-        var result = service.User(999);
+        var result = await service.UserAsync(999);
 
         // Assert
         result.Should().BeNull();
     }
 
     [Fact]
-    public void Update_CallsDataContextUpdate()
+    public async Task Update_CallsDataContextUpdate()
     {
         // Arrange
         var service = CreateService();
         var user = new User { Id = 1, Forename = "A", Surname = "B", Email = "a@b.com", IsActive = true };
 
         // Act
-        service.Update(user);
+        await service.UpdateAsync(user);
 
         // Assert
-        _dataContext.Verify(c => c.Update(user), Times.Once);
+        _dataContext.Verify(c => c.UpdateAsync(user), Times.Once);
     }
 
     [Fact]
-    public void Delete_CallsDataContextDelete()
+    public async Task Delete_CallsDataContextDelete()
     {
         // Arrange
         var service = CreateService();
         var user = new User { Id = 1, Forename = "A", Surname = "B", Email = "a@b.com", IsActive = true };
 
         // Act
-        service.Delete(user);
+        await service.DeleteAsync(user);
 
         // Assert
-        _dataContext.Verify(c => c.Delete(user), Times.Once);
+        _dataContext.Verify(c => c.DeleteAsync(user), Times.Once);
     }
 }

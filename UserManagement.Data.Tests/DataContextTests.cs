@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-using FluentAssertions;
+using System.Threading.Tasks;
 using UserManagement.Models;
 
 namespace UserManagement.Data.Tests;
@@ -10,7 +10,7 @@ public class DataContextTests
     private DataContext CreateContext() => new();
 
     [Fact]
-    public void GetAll_WhenNewEntityAdded_MustIncludeNewEntity()
+    public async Task GetAll_WhenNewEntityAdded_MustIncludeNewEntity()
     {
         // Arrange: Initializes objects and sets the value of the data that is passed to the method under test.
         var context = CreateContext();
@@ -21,10 +21,10 @@ public class DataContextTests
             Surname = "User",
             Email = "brandnewuser@example.com"
         };
-        context.Create(entity);
+        await context.CreateAsync(entity);
 
         // Act: Invokes the method under test with the arranged parameters.
-        var result = context.GetAll<User>();
+        var result = await context.GetAllAsync<User>();
 
         // Assert: Verifies that the action of the method under test behaves as expected.
         result
@@ -33,32 +33,33 @@ public class DataContextTests
     }
 
     [Fact]
-    public void GetAll_WhenDeleted_MustNotIncludeDeletedEntity()
+    public async Task GetAll_WhenDeleted_MustNotIncludeDeletedEntity()
     {
         // Arrange: Initializes objects and sets the value of the data that is passed to the method under test.
         var context = CreateContext();
-        var entity = context.GetAll<User>().First();
-        context.Delete(entity);
+        var users = await context.GetAllAsync<User>();
+        var entity = users.First();
+        await context.DeleteAsync(entity);
 
         // Act: Invokes the method under test with the arranged parameters.
-        var result = context.GetAll<User>();
+        var result = await context.GetAllAsync<User>();
 
         // Assert: Verifies that the action of the method under test behaves as expected.
         result.Should().NotContain(s => s.Email == entity.Email);
     }
 
     [Fact]
-    public void Update_WhenEntityChanged_MustReflectChanges()
+    public async Task Update_WhenEntityChanged_MustReflectChanges()
     {
         // Arrange
         var context = CreateContext();
-        var entity = context.GetAll<User>().First();
+        var entity = (await context.GetAllAsync<User>()).First();
         entity.Forename = "Updated";
         entity.Email = "updated@example.com";
 
         // Act
-        context.Update(entity);
-        var updated = context.GetAll<User>().First(u => u.Id == entity.Id);
+        await context.UpdateAsync(entity);
+        var updated = (await context.GetAllAsync<User>()).First(u => u.Id == entity.Id);
 
         // Assert
         updated.Forename.Should().Be("Updated");
@@ -66,35 +67,36 @@ public class DataContextTests
     }
 
     [Fact]
-    public void GetAll_WhenNoEntitiesExist_ReturnsEmpty()
+    public async Task GetAll_WhenNoEntitiesExist_ReturnsEmpty()
     {
         // Arrange
         var context = CreateContext();
-        foreach (var user in context.GetAll<User>().ToList())
-            context.Delete(user);
+        var users = await context.GetAllAsync<User>();
+        foreach (var user in users)
+            await context.DeleteAsync(user);
 
         // Act
-        var result = context.GetAll<User>();
+        var result = await context.GetAllAsync<User>();
 
         // Assert
         result.Should().BeEmpty();
     }
 
     [Fact]
-    public void Create_WhenNullEntity_ThrowsArgumentNullException()
+    public async Task Create_WhenNullEntity_ThrowsArgumentNullException()
     {
         // Arrange
         var context = CreateContext();
 
         // Act
-        Action act = () => context.Create<User>(null!);
+        Func<Task> act = async () => await context.CreateAsync<User>(null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
-    }       
+        await act.Should().ThrowAsync<ArgumentNullException>();
+    }
 
     [Fact]
-    public void Create_And_GetAll_LogEntry_Works()
+    public async Task Create_And_GetAll_LogEntry_Works()
     {
         // Arrange
         var context = CreateContext();
@@ -106,8 +108,8 @@ public class DataContextTests
         };
 
         // Act
-        context.Create(log);
-        var logs = context.GetAll<LogEntry>();
+        await context.CreateAsync(log);
+        var logs = await context.GetAllAsync<LogEntry>();
 
         // Assert
         logs.Should().Contain(l => l.Action == "Test" && l.Details == "Testing log entry");

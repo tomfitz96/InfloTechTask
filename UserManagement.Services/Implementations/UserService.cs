@@ -1,6 +1,7 @@
-﻿
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UserManagement.Data;
 using UserManagement.Models;
 using UserManagement.Services.Domain.Interfaces;
@@ -17,32 +18,55 @@ public class UserService : IUserService
     /// </summary>
     /// <param name="isActive"></param>
     /// <returns></returns>
-    public IEnumerable<User> FilterByActive(bool isActive)
+    
+
+    public async Task<IEnumerable<User>> FilterByActiveAsync(bool isActive)
     {
-        return _dataAccess.GetAll<User>().Where(u => u.IsActive == isActive);
+        var users = await _dataAccess.GetAllAsync<User>();
+        return users.Where(u => u.IsActive == isActive);
+    }
+    public async Task<IEnumerable<User>> GetAllAsync() => await _dataAccess.GetAllAsync<User>();
+
+    public async Task CreateAsync(User user)
+    {
+        await _dataAccess.CreateAsync(user);
     }
 
-    public IEnumerable<User> GetAll() => _dataAccess.GetAll<User>();
+    public async Task<User?> UserAsync(int id)
+    {
+        var users = await _dataAccess.GetAllAsync<User>();
+        return users.Where(u => u.Id == id).FirstOrDefault();        
+    }
 
-    public void Create(User user)
+    public async Task UpdateAsync(User existinguser)
+    {
+        await _dataAccess.UpdateAsync(existinguser);
+    }
+
+    public async Task DeleteAsync(User user)
+    {
+        await _dataAccess.DeleteAsync(user);     
+    }
+
+    public async Task LogUserActionAsync(int? userId, string action, string? details = null)
+    {
+        var log = new LogEntry
+        {
+            UserId = userId,
+            Action = action,
+            Details = details,
+            Timestamp = DateTime.UtcNow
+        };
+        await _dataAccess.CreateAsync(log);
+    }
+
+    public async Task<List<LogEntry>> GetUserLogsAsync(int userId)
     {        
-        _dataAccess.Create(user);
-    }
-
-    public User? User(int id)
-    {
-
-        return _dataAccess.GetAll<User>().Where(u => u.Id == id).FirstOrDefault();
-    }
-
-    public void Update(User existinguser)
-    {
-        _dataAccess.Update(existinguser);
-    }
-
-    public void Delete(User user)
-    {
-        _dataAccess.Delete(user);
-     
+        return await Task.FromResult(
+            _dataAccess.LogEntries
+                .Where(l => l.UserId == userId)
+                .OrderByDescending(l => l.Timestamp)
+                .ToList()
+        );
     }
 }

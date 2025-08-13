@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using UserManagement.Models;
 using UserManagement.Services.Domain.Interfaces;
@@ -23,8 +24,8 @@ public class UserControllerTests
         };
 
         _userService
-            .Setup(s => s.GetAll())
-            .Returns(users);
+            .Setup(s => s.GetAllAsync())
+            .ReturnsAsync(users);
 
         return users;
     }
@@ -35,14 +36,14 @@ public class UserControllerTests
     private UsersController CreateController() => new(_userService.Object, _dataContext.Object);
 
     [Fact]
-    public void List_WhenServiceReturnsUsers_ModelMustContainUsers()
+    public async Task List_WhenServiceReturnsUsers_ModelMustContainUsers()
     {
         // Arrange: Initializes objects and sets the value of the data that is passed to the method under test.
         var controller = CreateController();
         var users = SetupUsers();
 
         // Act: Invokes the method under test with the arranged parameters.
-        var result = controller.List(null);
+        var result = await controller.List(null);
 
         // Assert: Verifies that the action of the method under test behaves as expected.
         result.Model
@@ -51,17 +52,18 @@ public class UserControllerTests
     }
 
     [Fact]
-    public void List_WhenIsActiveProvided_FiltersUsersCorrectly()
+    public async Task List_WhenIsActiveProvided_FiltersUsersCorrectly()
     {
-        // Arrange: 
+        // Arrange
         var controller = CreateController();
         var activeUsers = new[]
         {
-        new User { Forename = "Active", Surname = "User", Email = "active@example.com", IsActive = true }};
-        _userService.Setup(s => s.FilterByActive(true)).Returns(activeUsers);
+            new User { Forename = "Active", Surname = "User", Email = "active@example.com", IsActive = true }
+        };
+        _userService.Setup(s => s.FilterByActiveAsync(true)).ReturnsAsync(activeUsers);
 
         // Act
-        var result = controller.List(true);
+        var result = await controller.List(true);
 
         // Assert
         result.Model.Should().BeOfType<UserListViewModel>()
@@ -82,7 +84,7 @@ public class UserControllerTests
     }
 
     [Fact]
-    public void Create_Post_WithInvalidModel_ReturnsViewWithModel()
+    public async Task Create_Post_WithInvalidModel_ReturnsViewWithModel()
     {
         // Arrange
         var controller = CreateController();
@@ -90,7 +92,7 @@ public class UserControllerTests
         var model = new UserListItemViewModel();
 
         // Act
-        var result = controller.Create(model);
+        var result = await controller.Create(model);
 
         // Assert
         result.Should().BeOfType<ViewResult>()
@@ -98,7 +100,7 @@ public class UserControllerTests
     }
 
     [Fact]
-    public void Create_Post_WithValidModel_CreatesUserAndRedirects()
+    public async Task Create_Post_WithValidModel_CreatesUserAndRedirects()
     {
         // Arrange
         var controller = CreateController();
@@ -112,36 +114,36 @@ public class UserControllerTests
         };
 
         // Act
-        var result = controller.Create(model);
+        var result = await controller.Create(model);
 
         // Assert
-        _userService.Verify(s => s.Create(It.IsAny<User>()), Times.Once);
+        _userService.Verify(s => s.CreateAsync(It.IsAny<User>()), Times.Once);
         result.Should().BeOfType<RedirectToActionResult>();
     }
 
     [Fact]
-    public void ViewUser_WhenUserNotFound_ReturnsNotFound()
+    public async Task ViewUser_WhenUserNotFound_ReturnsNotFound()
     {
         // Arrange
         var controller = CreateController();
-        _userService.Setup(s => s.User(It.IsAny<int>())).Returns((User?)null);
+        _userService.Setup(s => s.UserAsync(It.IsAny<int>())).ReturnsAsync((User?)null);
 
         // Act
-        var result = controller.ViewUser(999);
+        var result = await controller.ViewUser(999);
 
         // Assert
         result.Should().BeOfType<NotFoundResult>();
     }
 
     [Fact]
-    public void EditUser_Get_WhenUserNotFound_ReturnsNotFound()
+    public async Task EditUser_Get_WhenUserNotFound_ReturnsNotFound()
     {
         // Arrange
         var controller = CreateController();
-        _userService.Setup(s => s.User(It.IsAny<int>())).Returns((User?)null);
+        _userService.Setup(s => s.UserAsync(It.IsAny<int>())).ReturnsAsync((User?)null);
 
         // Act
-        var result = controller.EditUser(999);
+        var result = await controller.EditUser(999);
 
         // Assert
         result.Should().BeOfType<NotFoundResult>();
