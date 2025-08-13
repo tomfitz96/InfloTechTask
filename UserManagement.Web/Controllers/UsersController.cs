@@ -5,28 +5,26 @@ using UserManagement.Services.Domain.Interfaces;
 using UserManagement.Web.Models.Users;
 
 namespace UserManagement.WebMS.Controllers;
-
-//[Route("users")]
 public class UsersController : Controller
 {
     private readonly IUserService _userService;
 
-    public UsersController(IUserService userService) => _userService = userService;  
+    /// <summary>
+    /// Injects the user service dependency.
+    /// </summary>
+    public UsersController(IUserService userService) => _userService = userService;
 
+    /// <summary>
+    /// Lists users, filtered by active status.
+    /// </summary>
     [HttpGet]
     public async Task<ViewResult> List(bool? isActive)
     {
-        IEnumerable<User> users;
-        if (isActive.HasValue)
-        {
-            users = await _userService.FilterByActiveAsync(isActive.Value);
-        }
-        else
-        {
-            users = await _userService.GetAllAsync();
-        }
+        IEnumerable<User> users = isActive.HasValue
+            ? await _userService.FilterByActiveAsync(isActive.Value)
+            : await _userService.GetAllAsync();
 
-
+        // map to view models.
         var items = users.Select(p => new UserListItemViewModel
         {
             Id = p.Id,
@@ -45,18 +43,24 @@ public class UsersController : Controller
         return View(model);
     }
 
+    /// <summary>
+    /// Displays a single user and their logs.
+    /// </summary>
+    /// <param name="id">User identifier.</param>
     [HttpGet]
-    // GET: Users/ViewUser
     public async Task<IActionResult> ViewUser(int id)
     {
+        // Fetch user;
         var user = await _userService.UserAsync(id);
         if (user == null)
             return NotFound();
 
+        // Retrieve associated logs.
         var logs = await _userService.GetUserLogsAsync(id);
+
+        // Map to view model including logs.
         var model = new UserListItemViewModel
         {
-
             Id = user.Id,
             Forename = user.Forename,
             Surname = user.Surname,
@@ -67,21 +71,29 @@ public class UsersController : Controller
         };
 
         return View(model);
-
     }
 
+    /// <summary>
+    /// Shows the create user form.
+    /// </summary>
     [HttpGet]
     public IActionResult Create()
     {
         return View();
     }
 
-    [HttpPost]    
+    /// <summary>
+    /// Handles creation of a new user.
+    /// </summary>
+    /// <param name="model">User input model.</param>
+    [HttpPost]
     public async Task<IActionResult> Create(UserListItemViewModel model)
     {
+        // Return with validation errors if model invalid.
         if (!ModelState.IsValid)
             return View(model);
-        
+
+        // Map to model.
         var user = new User
         {
             Forename = model.Forename ?? string.Empty,
@@ -91,25 +103,26 @@ public class UsersController : Controller
             DateOfBirth = model.DateOfBirth
         };
 
+        // Persist and log
         await _userService.CreateAsync(user);
         await _userService.LogUserActionAsync(user.Id, "Created", $"User {user.Forename} {user.Surname} created.");
 
-        if (ModelState.IsValid)
-            return RedirectToAction(nameof(List));
-        else 
-            return View(model);
+        // redirect back to list view
+        return RedirectToAction(nameof(List));
     }
-    
-    // GET: Users/Edit
+
+    /// <summary>
+    /// Displays the edit form for an existing user.
+    /// </summary>
+    /// <param name="id">User identifier.</param>
     [HttpGet]
     public async Task<IActionResult> EditUser(int id)
     {
         var user = await _userService.UserAsync(id);
         if (user == null)
-        {
             return NotFound();
-        }
 
+        // Populate form model.
         var model = new UserListItemViewModel
         {
             Id = user.Id,
@@ -122,22 +135,23 @@ public class UsersController : Controller
         return View(model);
     }
 
-    // POST: User/ViewUser    
-    [HttpPost]    
+    /// <summary>
+    /// Handles user update submission.
+    /// </summary>
+    /// <param name="model">Updated user data.</param>
+    [HttpPost]
     public async Task<IActionResult> EditUser(UserListItemViewModel model)
     {
         if (!ModelState.IsValid)
             return View(model);
 
+        // Fetch current entity.
         var user = await _userService.UserAsync(model.Id);
-
         if (user == null)
             return NotFound();
 
-        
-
+        // add changes to log
         var changes = new List<string>();
-
         if (user.Forename != model.Forename)
             changes.Add($"Forename changed from {user.Forename} to {model.Forename}");
         if (user.Surname != model.Surname)
@@ -149,31 +163,34 @@ public class UsersController : Controller
         if (user.DateOfBirth != model.DateOfBirth)
             changes.Add($"DateOfBirth changed from {user.DateOfBirth} to {model.DateOfBirth}");
 
+        // Apply updates.
         user.Forename = model.Forename ?? string.Empty;
         user.Surname = model.Surname ?? string.Empty;
         user.Email = model.Email ?? string.Empty;
         user.IsActive = model.IsActive;
         user.DateOfBirth = model.DateOfBirth;
 
+        // Persist only if there are actual changes.
         if (changes.Count > 0)
         {
             await _userService.UpdateAsync(user);
-            await _userService.LogUserActionAsync(user.Id, "Updated", string.Join("; ",changes));
+            await _userService.LogUserActionAsync(user.Id, "Updated", string.Join("; ", changes));
         }
-       
-        if (ModelState.IsValid)
-            return RedirectToAction(nameof(ViewUser), new { id = user.Id });       
-        else 
-            return View(model);
+
+        return RedirectToAction(nameof(ViewUser), new { id = user.Id });
     }
 
+    /// <summary>
+    /// Shows delete confirmation page.
+    /// </summary>
+    /// <param name="id">User identifier.</param>
     [HttpGet]
     public async Task<IActionResult> DeleteUser(int id)
     {
-        var user = await _userService.UserAsync(id); 
+        var user = await _userService.UserAsync(id);
         if (user == null)
             return NotFound();
-     
+
         var model = new UserListItemViewModel
         {
             Id = user.Id,
@@ -187,6 +204,10 @@ public class UsersController : Controller
         return View(model);
     }
 
+    /// <summary>
+    /// Performs the deletion after confirmation.
+    /// </summary>
+    /// <param name="id">User identifier.</param>
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
@@ -195,6 +216,7 @@ public class UsersController : Controller
         if (user == null)
             return NotFound();
 
+        // Delete and log.
         await _userService.DeleteAsync(user);
         await _userService.LogUserActionAsync(user.Id, "Deleted", $"User {user.Forename} {user.Surname} deleted.");
         return RedirectToAction(nameof(List));

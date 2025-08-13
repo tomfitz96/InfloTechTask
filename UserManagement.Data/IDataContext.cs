@@ -12,6 +12,5 @@ public interface IDataContext
     Task CreateAsync<TEntity>(TEntity entity) where TEntity : class;
     Task UpdateAsync<TEntity>(TEntity entity) where TEntity : class;
     Task DeleteAsync<TEntity>(TEntity entity) where TEntity : class;
-
     IQueryable<LogEntry> LogEntries { get; }
 }

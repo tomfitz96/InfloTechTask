@@ -3,15 +3,24 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-
 using UserManagement.Models;
 
 namespace UserManagement.Data;
 
+/// <summary>
+/// Application EF Core DbContext backed by an in-memory database.
+/// NOTE: Data is "In-memory" which is suitable for demos/tests, should be replaced with a persistent provider (e.g. SQL Server)
+/// </summary>
 public class DataContext : DbContext, IDataContext
 {
+    /// <summary>
+    /// Constructor ensures the in-memory store is created.    
+    /// </summary>
     public DataContext() => Database.EnsureCreated();
 
+    /// <summary>
+    /// Configure EF Core to use the in-memory database.
+    /// </summary>
     protected override void OnConfiguring(DbContextOptionsBuilder options)
         => options.UseInMemoryDatabase("UserManagement.Data.DataContext");
 
@@ -31,29 +40,53 @@ public class DataContext : DbContext, IDataContext
             new User { Id = 11, Forename = "Robin", Surname = "Feld", Email = "rfeld@example.com", IsActive = true , DateOfBirth = new DateOnly(1957,2,5)},
         });
 
+    /// <summary>
+    /// Users aggregate root set.
+    /// </summary>
     public DbSet<User> Users { get; set; }
 
-    public DbSet<LogEntry> LogEntriesDbSet { get; set; }
-    public IQueryable<LogEntry> LogEntries => LogEntriesDbSet!;
+    /// <summary>
+    /// Backing DbSet for log entries (getter-only to prevent reassignment).
+    /// </summary>
+    public DbSet<LogEntry> LogEntriesDbSet => Set<LogEntry>();
 
+    /// <summary>
+    /// Read-only projection of log entries
+    /// </summary>
+    public IQueryable<LogEntry> LogEntries => LogEntriesDbSet;
 
+    /// <summary>
+    /// Retrieve all entities of a given type.
+    /// NOTE: This loads all rows into memory; 
+    /// </summary>
     public async Task<List<TEntity>> GetAllAsync<TEntity>() where TEntity : class
-    {
-        return await base.Set<TEntity>().ToListAsync();
-    }    
+        => await Set<TEntity>().ToListAsync();
+
+    /// <summary>
+    /// Create (add) an entity and persist immediately.
+    /// </summary>
     public async Task CreateAsync<TEntity>(TEntity entity) where TEntity : class
     {
-        await base.AddAsync(entity);
+        await AddAsync(entity);
         await SaveChangesAsync();
     }
+
+    /// <summary>
+    /// Update an entity and persist immediately.
+    /// Assumes the entity is either tracked or can be attached safely.
+    /// </summary>
     public async Task UpdateAsync<TEntity>(TEntity entity) where TEntity : class
     {
-        base.Update(entity);
+        Update(entity);
         await SaveChangesAsync();
     }
+
+    /// <summary>
+    /// Delete an entity and persist immediately.
+    /// </summary>
     public async Task DeleteAsync<TEntity>(TEntity entity) where TEntity : class
     {
-        base.Remove(entity);
+        Remove(entity);
         await SaveChangesAsync();
     }
 }
